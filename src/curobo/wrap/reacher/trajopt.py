@@ -2112,8 +2112,8 @@ def jit_trajopt_best_select(
     error = convergence_error + smooth_cost + running_cost
     if welding_start_end_position_error is not None and welding_start_end_position_error.shape[0] > 1:
         welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=-1)
-        error = error + welding_start_end_position_error
-        success[welding_start_end_position_error > 10000.0] = False
+        success[welding_start_end_position_error >100] = False
+        print(welding_start_end_position_error)
     else:
         print('no welding error')
     

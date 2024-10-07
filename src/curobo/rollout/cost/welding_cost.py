@@ -432,42 +432,17 @@ class WeldingCost(CostBase):
 
         waypoint_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.waypoint_position.repeat(b,h,1), waypoint_matrix)
 
-        #Hard variables
-
-        working_angle_cost = torch.square(working_angle_consistency_error)* self.welding_tool_working_angle_weight[0]
-
-        #print(working_angle_cost)
-
-        working_angle_bound_cost = torch.square(working_angle_bound_error)*self.welding_tool_working_angle_weight[1]
-
-        travel_angle_cost = torch.square(travel_angle_error)* self.welding_tool_travel_angle_weight
-
-        start_travel_angle_cost = torch.square(start_angle_error)*self.welding_start_end_angle_weight[0]
-
-        end_travel_angle_cost = torch.square(end_angle_error)*self.welding_start_end_angle_weight[1]
-        
-        weldline_distance_cost =  torch.square(weldline_distance_error)*self.welding_tool_contact_weight*10
-
-        constant_movement_cost = torch.square(constant_movement_error)* cost_mask_except_last* self.welding_movement_consistency_weight[0]
-
-        acc_squared_cost = torch.square(acc_squared_error)* self.welding_movement_consistency_weight[0]
-
-
         #Soft variables
 
-        start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]*200
-        
-        start_pause_cost = self.logcosh((start_point_pause_error1 + start_point_pause_error2), 0.01)* self.welding_start_end_position_weight[0]
+        start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]
         
         end_position_cost = self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1]
-
-        waypoint_cost = self.logcosh(waypoint_distance_error, 0.01)*self.waypoint_weight
 
 
         
 
         # Final sum of costs
-        cost = torch.sum(torch.stack([working_angle_cost, working_angle_bound_cost, travel_angle_cost, start_travel_angle_cost, end_travel_angle_cost, weldline_distance_cost, constant_movement_cost, acc_squared_cost, start_position_cost, start_pause_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
+        cost = torch.sum(torch.stack([start_position_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
         
         return cost
         
