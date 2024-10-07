@@ -920,8 +920,8 @@ class TrajOptSolver(TrajOptSolverConfig):
         print("optim_results")
         if 0:# and seq_list[0].shape[0] != 1:
             self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
-            """for i in range(len(seq_list)):
-                self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)"""
+            for i in range(len(seq_list)):
+                self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)
         log_info("Ran TO")
         traj_result = self._get_result(
             result,
@@ -2113,7 +2113,7 @@ def jit_trajopt_best_select(
     if welding_start_end_position_error is not None and welding_start_end_position_error.shape[0] > 1:
         welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=-1)
         error = error + welding_start_end_position_error
-        #success[welding_start_end_position_error > 100000000.0] = False
+        success[welding_start_end_position_error > 10000.0] = False
     else:
         print('no welding error')
     

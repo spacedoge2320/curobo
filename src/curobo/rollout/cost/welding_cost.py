@@ -425,58 +425,49 @@ class WeldingCost(CostBase):
 
         start_point_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.welding_start_point.repeat(b,h,1), start_matrix)
 
-        start_point_pause_error1 = waypoint_distance_error_fn(ee_pos_batch, self.welding_start_point.repeat(1,h,1), torch.roll(start_matrix, 1, dims=1))
-        start_point_pause_error2 = waypoint_distance_error_fn(ee_pos_batch, self.welding_start_point.repeat(1,h,1), torch.roll(start_matrix, -1, dims=1))
+        start_point_pause_error1 = waypoint_distance_error_fn(ee_pos_batch, start_point.repeat(1,h,1), torch.roll(start_matrix, 1, dims=1))
+        start_point_pause_error2 = waypoint_distance_error_fn(ee_pos_batch, start_point.repeat(1,h,1), torch.roll(start_matrix, -1, dims=1))
 
         end_point_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.welding_end_point.repeat(b,h,1), end_matrix)
 
+        waypoint_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.waypoint_position.repeat(b,h,1), waypoint_matrix)
 
+        #Hard variables
 
-        #working_angle_cost = torch.square(self.logcosh((working_angle_consistency_error)))
-        working_angle_cost = self.logcosh(working_angle_consistency_error, 0.01)*self.welding_tool_working_angle_weight[0]
+        working_angle_cost = torch.square(working_angle_consistency_error)* self.welding_tool_working_angle_weight[0]
 
-        travel_angle_cost = self.logcosh(travel_angle_error, 0.01)* self.welding_tool_travel_angle_weight
+        #print(working_angle_cost)
 
-        start_travel_angle_cost = self.logcosh(start_angle_error, 0.01)*self.welding_start_end_angle_weight[0]
+        working_angle_bound_cost = torch.square(working_angle_bound_error)*self.welding_tool_working_angle_weight[1]
 
-        end_travel_angle_cost = self.logcosh(end_angle_error, 0.01)*self.welding_start_end_angle_weight[1]
+        travel_angle_cost = torch.square(travel_angle_error)* self.welding_tool_travel_angle_weight
+
+        start_travel_angle_cost = torch.square(start_angle_error)*self.welding_start_end_angle_weight[0]
+
+        end_travel_angle_cost = torch.square(end_angle_error)*self.welding_start_end_angle_weight[1]
         
-        weldline_distance_cost =  self.logcosh(weldline_distance_error, 0.001)*self.welding_tool_contact_weight
+        weldline_distance_cost =  torch.square(weldline_distance_error)*self.welding_tool_contact_weight*10
 
-        
+        constant_movement_cost = torch.square(constant_movement_error)* cost_mask_except_last* self.welding_movement_consistency_weight[0]
 
-        constant_movement_cost = self.logcosh(constant_movement_error, 0.01)* cost_mask_except_last* self.welding_movement_consistency_weight[0]
+        acc_squared_cost = torch.square(acc_squared_error)* self.welding_movement_consistency_weight[0]
 
-        acc_squared_cost = self.logcosh(acc_squared_error, 0.01)* self.welding_movement_consistency_weight[0]
 
-        start_position_cost = self.logcosh(start_point_distance_error, 0.001)*self.welding_start_end_position_weight[0]
+        #Soft variables
+
+        start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]*200
         
         start_pause_cost = self.logcosh((start_point_pause_error1 + start_point_pause_error2), 0.01)* self.welding_start_end_position_weight[0]
         
         end_position_cost = self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1]
 
+        waypoint_cost = self.logcosh(waypoint_distance_error, 0.01)*self.waypoint_weight
 
-        # Define acceptable ranges for each cost
-        weldline_distance_range = 0.01  # 1 cm
-        working_angle_range = 0.02  # about 5.7 degrees
-        start_point_distance_range = 0.1  # 1 cm
-        end_point_distance_range = 0.3  # 1 cm
 
-        # Calculate individual rejection errors
-        weldline_distance_rejection = torch.relu(torch.sigmoid((weldline_distance_error - weldline_distance_range) * 1000) - 1)
-        working_angle_rejection = torch.relu(torch.sigmoid((torch.abs(working_angle_error) - working_angle_range) * 1000) - 1)
-        start_point_rejection = torch.relu(torch.sigmoid((start_point_distance_error - start_point_distance_range) * 1000) - 1)
-        end_point_rejection = torch.relu(torch.sigmoid((end_point_distance_error - end_point_distance_range) * 1000) - 1)
-
-        # Sum up all rejection errors
-        total_rejection = weldline_distance_rejection + working_angle_rejection + start_point_rejection + end_point_rejection
-
-        # Apply high error if any rejection occurs, using the cost mask
-        #rejection_err = total_rejection * 10000000 * cost_mask
         
 
         # Final sum of costs
-        cost = torch.sum(torch.stack([working_angle_cost, travel_angle_cost, start_travel_angle_cost, end_travel_angle_cost, weldline_distance_cost, constant_movement_cost, start_position_cost, start_pause_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
+        cost = torch.sum(torch.stack([working_angle_cost, working_angle_bound_cost, travel_angle_cost, start_travel_angle_cost, end_travel_angle_cost, weldline_distance_cost, constant_movement_cost, acc_squared_cost, start_position_cost, start_pause_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
         
         return cost
         
@@ -572,4 +563,4 @@ class WeldingCost(CostBase):
         # Final sum of costs
         cost = torch.sum(torch.stack([working_angle_cost, working_angle_bound_cost, travel_angle_cost, start_travel_angle_cost, end_travel_angle_cost, weldline_distance_cost, constant_movement_cost, acc_squared_cost, start_position_cost, start_pause_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
         
-        return cost, weldtip_cost_matrix
+        return cost + waypoint_cost, weldtip_cost_matrix
