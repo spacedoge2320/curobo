@@ -64,7 +64,8 @@ from curobo.util_file import get_robot_configs_path, get_task_configs_path, join
 from curobo.wrap.reacher.evaluator import TrajEvaluator, TrajEvaluatorConfig
 from curobo.wrap.reacher.types import ReacherSolveState, ReacherSolveType
 from curobo.wrap.wrap_base import WrapBase, WrapConfig, WrapResult
-
+import open3d as o3d
+import numpy as np
 
 @dataclass
 class TrajOptSolverConfig:
@@ -915,7 +916,12 @@ class TrajOptSolver(TrajOptSolverConfig):
         if goal_buffer.goal_pose.position is not None:
             goal_buffer.goal_state = None
         self.solver.reset()
-        result = self.solver.solve(goal_buffer, seed_traj)
+        result, seq_list = self.solver.solve_seq(goal_buffer, seed_traj)
+        print("optim_results")
+        if 1:# and seq_list[0].shape[0] != 1:
+            self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
+            """for i in range(len(seq_list)):
+                self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)"""
         log_info("Ran TO")
         traj_result = self._get_result(
             result,
@@ -1291,6 +1297,72 @@ class TrajOptSolver(TrajOptSolverConfig):
             )
 
         raise NotImplementedError()
+    
+    def visualize_trajectory(self, trajectory, only_points=True):
+        vis = o3d.visualization.Visualizer()
+        vis.create_window()
+        pose_list = []
+        print(f'number of trajectories: {trajectory.shape[0]}')
+        
+        def fk(q):
+            if isinstance(q, np.ndarray):
+                q = torch.tensor(np.array([q]), dtype=torch.float32, device=self.tensor_args.device)
+
+            kin_state =  self.fk(q)
+            eepos = kin_state.ee_position.to('cpu').numpy()[0]
+            eequat = kin_state.ee_quaternion.to('cpu').numpy()[0]
+            
+            eepose = np.concatenate((eepos, eequat), axis=0)
+            
+            return eepose
+        
+        # Add boxes representing the walls
+        walls = [
+            ("left_wall", [0.25, 0.395, 0.2375], [0.52, 0.01, 0.6]),
+            ("right_wall", [0.25, -0.395, 0.2375], [0.52, 0.01, 0.6]),
+            ("bottom_wall", [0.25, 0, -0.06], [0.52, 0.8, 0.01]),
+            ("back_wall", [0.505, 0, 0.2375], [0.01, 0.8, 0.6])
+        ]
+
+        for name, center, size in walls:
+            box = o3d.geometry.TriangleMesh.create_box(width=size[0], height=size[1], depth=size[2])
+            box.compute_vertex_normals()
+            box.paint_uniform_color([0.8, 0.8, 0.8])  # Light gray color
+            # Calculate the translation to place the left bottom corner at (0, 0, 0)
+            translation = np.array(center) - np.array([size[0]/2, size[1]/2, size[2]/2])
+            box.translate(translation)
+            vis.add_geometry(box)
+
+        
+        for i in range(trajectory.shape[0]):
+            subtraj = trajectory[i]
+            pose_list = np.array([fk(subtraj[i]) for i in range(len(subtraj))])
+            position = pose_list[:, :3]
+            orientation = pose_list[:, 3:]
+            
+            #print("Position shapes:", position.shape)
+            #print("Orientation shapes:", orientation.shape)
+            if only_points:
+                traj_pcd = o3d.geometry.PointCloud()
+                traj_pcd.points = o3d.utility.Vector3dVector(position)
+                vis.add_geometry(traj_pcd)
+            
+            else:
+                for i in range(position.shape[0]):
+                    # Create a coordinate frame at the pose
+                    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=position[i])
+                    
+                    # Convert quaternion to rotation matrix
+                    R = o3d.geometry.get_rotation_matrix_from_quaternion(orientation[i])
+                        
+                    # Apply the orientation to the frame
+                    frame.rotate(R, center=position[i])
+                    
+                    # Append the frame to the list
+                    vis.add_geometry(frame)
+                
+        vis.run()
+        vis.destroy_window()
 
     @profiler.record_function("trajopt/get_result")
     def _get_result(
@@ -1301,16 +1373,21 @@ class TrajOptSolver(TrajOptSolverConfig):
         seed_traj: JointState,
         num_seeds: int,
         batch_mode: bool = False,
-    ) -> TrajOptResult:
+    ):
+        #self.visualize_trajectory(result.raw_action.view(50,44,6).to('cpu').numpy(), False)
         """Get result from the optimization problem.
 
         Args:
-            result: Result of the optimization problem.
-            return_all_solutions: Return solutions for all seeds.
-            goal: Goal object containing convergence parameters.
-            seed_traj: Seed trajectory used for optimization.
-            num_seeds: Number of seeds used for optimization.
-            batch_mode: Batch mode for problems.
+            result: _description_
+            return_all_solutions: _description_
+            goal: _description_
+            seed_traj: _description_
+            num_seeds: _description_
+            batch_mode: _description_
+
+        Raises:
+            log_error: _description_
+            ValueError: _description_
 
         Returns:
             TrajOptResult: Result of the trajectory optimization.
@@ -1338,10 +1415,12 @@ class TrajOptSolver(TrajOptSolverConfig):
                 else:
                     metrics = self.interpolate_rollout.get_metrics(interpolated_trajs)
                 result.metrics.feasible = metrics.feasible
+                print(f'out_metrics: {round((torch.sum(torch.all(metrics.feasible, dim=-1))/metrics.feasible.shape[0]).item(),3)}, total: {metrics.feasible.shape[0]}')
                 result.metrics.position_error = metrics.position_error
                 result.metrics.rotation_error = metrics.rotation_error
                 result.metrics.cspace_error = metrics.cspace_error
                 result.metrics.goalset_index = metrics.goalset_index
+                result.metrics.welding_start_end_position_error = metrics.welding_start_end_position_error
 
         st_time = time.time()
         if result.metrics.cspace_error is None and result.metrics.position_error is None:
@@ -1356,7 +1435,8 @@ class TrajOptSolver(TrajOptSolverConfig):
             self.rotation_threshold,
             self.cspace_threshold,
         )
-
+        
+        
         if False:
             feasible = torch.all(result.metrics.feasible, dim=-1)
 
@@ -1438,6 +1518,7 @@ class TrajOptSolver(TrajOptSolverConfig):
                     result.metrics.position_error,
                     result.metrics.rotation_error,
                     result.metrics.goalset_index,
+                    result.metrics.welding_start_end_position_error,
                     result.metrics.cost,
                     smooth_cost,
                     batch_mode,
@@ -2009,6 +2090,7 @@ def jit_trajopt_best_select(
     position_error: Union[torch.Tensor, None],
     rotation_error: Union[torch.Tensor, None],
     goalset_index: Union[torch.Tensor, None],
+    welding_start_end_position_error,
     cost,
     smooth_cost,
     batch_mode: bool,
@@ -2028,15 +2110,42 @@ def jit_trajopt_best_select(
 
     running_cost = torch.mean(cost, dim=-1) * 0.0001
     error = convergence_error + smooth_cost + running_cost
-    error[~success] += 10000.0
+    if welding_start_end_position_error is not None and welding_start_end_position_error.shape[0] > 1:
+        #welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=-1)
+        error + running_cost + smooth_cost
+        #success[welding_start_end_position_error > 100000000.0] = False
+    else:
+        print('no welding error')
+    
+    
+    error[~success] += 10000000000.0
+
+    # Calculate and print the ratio of NaN values in the error tensor
+    nan_count = torch.isnan(error).sum()
+    total_count = error.numel()
+    nan_ratio = nan_count.float() / total_count
+    #print(f"NaN ratio in error tensor: {nan_ratio:.4f}")
+
+
+    #print(error)
+
     if batch_mode:
-        idx = torch.argmin(error.view(batch, num_seeds), dim=-1)
+        # Replace NaN values with a large number to ensure they're not selected
+        error_no_nan = torch.where(torch.isnan(error), torch.tensor(float(10000000000.0), device=error.device), error)
+        idx = torch.argmin(error_no_nan.view(batch, num_seeds), dim=-1)
         idx = idx + num_seeds * col
         success = success[idx]
     else:
-        idx = torch.argmin(error, dim=0)
+        # Replace NaN values with a large number to ensure they're not selected
+        error_no_nan = torch.where(torch.isnan(error), torch.tensor(float(10000000000.0), device=error.device), error)
+        idx = torch.argmin(error_no_nan, dim=0)
+        print(error[idx])
 
-        success = success[idx : idx + 1]
+        # Check if the selected index corresponds to a NaN value
+        if torch.isnan(error[idx]):
+            success = torch.tensor([False], device=success.device)
+        else:
+            success = success[idx : idx + 1]
 
     # goalset_index = position_error = rotation_error = cspace_error = None
     if position_error is not None:

@@ -42,14 +42,15 @@ from curobo.util.torch_utils import get_torch_jit_decorator
 @dataclass
 class RolloutMetrics(Sequence):
     cost: Optional[T_BValue_float] = None
+    welding_start_end_position_error: Optional[T_BValue_float] = None
     constraint: Optional[T_BValue_float] = None
     feasible: Optional[T_BValue_bool] = None
     state: Optional[State] = None
 
     def __getitem__(self, idx):
-        d_list = [self.cost, self.constraint, self.feasible, self.state]
+        d_list = [self.cost, self.constraint, self.feasible, self.state, self.welding_start_end_position_error]
         idx_vals = list_idx_if_not_none(d_list, idx)
-        return RolloutMetrics(idx_vals[0], idx_vals[1], idx_vals[2], idx_vals[3])
+        return RolloutMetrics(idx_vals[0], idx_vals[1], idx_vals[2], idx_vals[3], idx_vals[4])
 
     def __len__(self):
         if self.cost is not None:
@@ -65,6 +66,7 @@ class RolloutMetrics(Sequence):
             constraint=None if self.constraint is None else self.constraint.clone(),
             feasible=None if self.feasible is None else self.feasible.clone(),
             state=None if self.state is None else self.state,
+            welding_start_end_position_error=None if self.welding_start_end_position_error is None else self.welding_start_end_position_error.clone(),
         )
 
 

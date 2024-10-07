@@ -123,11 +123,17 @@ class PrimitiveCollisionCost(CostBase, PrimitiveCollisionCostConfig):
             env_query_idx=env_query_idx,
             return_loss=self.return_loss,
         )
+
+        dist = dist
+        
         if self.classify:
-            cost = weight_collision(dist, self.sum_distance)
+            cost = self.logcosh(weight_collision(dist, self.sum_distance),2000)
         else:
-            cost = weight_distance(dist, self.sum_distance)
+            cost = self.logcosh(weight_distance(dist, self.sum_distance),2000)
         return cost
+    
+    def logcosh(self,x:torch.Tensor, a=1, b=1):
+        return ((x/a + torch.log(1+torch.exp(-2*(x/a))) - 0.69314718056)*a)*b
 
     def sweep_fn(self, robot_spheres_in, env_query_idx: Optional[torch.Tensor] = None):
         batch_size, horizon, n_spheres, _ = robot_spheres_in.shape
@@ -161,11 +167,11 @@ class PrimitiveCollisionCost(CostBase, PrimitiveCollisionCostConfig):
             return_loss=self.return_loss,
         )
         dist = dist.view(batch_size, new_horizon, n_spheres)
-
+        dist = dist 
         if self.classify:
-            cost = weight_sweep_collision(self.int_sum_mat, dist, self.sum_distance)
+            cost = self.logcosh(weight_sweep_collision(self.int_sum_mat, dist, self.sum_distance),2000)
         else:
-            cost = weight_sweep_distance(self.int_sum_mat, dist, self.sum_distance)
+            cost = self.logcosh(weight_sweep_distance(self.int_sum_mat, dist, self.sum_distance),2000)
 
         return cost
 
@@ -185,11 +191,12 @@ class PrimitiveCollisionCost(CostBase, PrimitiveCollisionCostConfig):
             return_loss=self.return_loss,
             sum_collisions=self.sum_collisions,
         )
-
+        dist = dist
         if self.classify:
-            cost = weight_collision(dist, self.sum_distance)
+            cost =  self.logcosh(weight_collision(dist, self.sum_distance),2000)
+            
         else:
-            cost = weight_distance(dist, self.sum_distance)
+            cost =  self.logcosh(weight_distance(dist, self.sum_distance),2000)
         return cost
 
     def update_dt(self, dt: Union[float, torch.Tensor]):

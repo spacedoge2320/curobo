@@ -1,0 +1,65 @@
+robot_cfg:
+  kinematics:
+    use_usd_kinematics: False
+    usd_path: #"robot/rb3_description/rb3.usd"
+    usd_robot_root: "/rb3"
+    isaac_usd_path: ""
+    usd_flip_joints: {}
+    usd_flip_joint_limits: []
+    urdf_path: "robot/rb3_description/rb3.urdf"
+    asset_root_path: "robot/rb3_description"
+    base_link: "base_link"
+    ee_link: "Link_EE"
+    collision_link_names: 
+      [
+      "Link_1", 
+      "Link_2", 
+      "Link_3", 
+      "Link_4", 
+      "Link_5", 
+      "Link_6",
+      "Link_EE"
+      ]
+    collision_spheres: "spheres/rb3_mesh.yml"
+
+    collision_sphere_buffer: 0.0025
+    extra_collision_spheres: {"Link_EE":1}
+    use_global_cumul: True
+    self_collision_ignore:
+      {
+        "Link_1": ["Link_2"],
+        "Link_2": ["Link_1", "Link_3"],
+        "Link_3": ["Link_2", "Link_4"],
+        "Link_4": ["Link_3", "Link_5"],
+        "Link_5": ["Link_4", "Link_6"],
+        "Link_6": ["Link_5"],
+      }
+    self_collision_buffer:
+      "Link_1": 0.005
+      "Link_2": 0.005
+      "Link_3": 0.005
+      "Link_4": 0.005
+      "Link_5": 0.005
+      "Link_6": 0.005
+    mesh_link_names: 
+        - "base_link"
+        - "Link_1"
+        - "Link_2"
+        - "Link_3"
+        - "Link_4"
+        - "Link_5"
+        - "Link_6"
+    cspace:
+      joint_names: 
+          - "Joint_1"
+          - "Joint_2"
+          - "Joint_3"
+          - "Joint_4"
+          - "Joint_5"
+          - "Joint_6"
+      retract_config: [0, -1.6, 2.1, 0.0, 1.5, 0.0]
+      null_space_weight: [1, 1.0, 1.0, 1.0, 1.0, 1.0]
+      cspace_distance_weight: [1, 1.0, 1.0, 1.0, 1.0, 1.0]
+      max_jerk: 500.0
+      max_acceleration: 15.0
+

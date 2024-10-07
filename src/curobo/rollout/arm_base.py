@@ -411,6 +411,10 @@ class ArmBase(RolloutBase, ArmBaseConfig):
             constraint_list.append(self_constraint)
         constraint = cat_sum(constraint_list)
 
+        for cost in constraint_list:
+            print(f'cost_fail_rate: {round((torch.sum(torch.nonzero(cost, as_tuple=True)[0])/cost.shape[0]).item(),3)}, total: {cost.shape[0]}')
+                
+
         feasible = constraint == 0.0
 
         if out_metrics is None:
@@ -434,9 +438,12 @@ class ArmBase(RolloutBase, ArmBaseConfig):
         if isinstance(state, JointState):
             state = self._get_augmented_state(state)
         out_metrics = self.constraint_fn(state)
+        
         out_metrics.state = state
         out_metrics = self.convergence_fn(state, out_metrics)
+
         out_metrics.cost = self.cost_fn(state)
+        
         return out_metrics
 
     def get_metrics_cuda_graph(self, state: JointState):

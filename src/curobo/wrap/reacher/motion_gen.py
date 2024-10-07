@@ -82,8 +82,8 @@ from curobo.wrap.reacher.evaluator import TrajEvaluator, TrajEvaluatorConfig
 from curobo.wrap.reacher.ik_solver import IKResult, IKSolver, IKSolverConfig
 from curobo.wrap.reacher.trajopt import TrajOptResult, TrajOptSolver, TrajOptSolverConfig
 from curobo.wrap.reacher.types import ReacherSolveState, ReacherSolveType
-
-
+from curobo.rollout.cost.welding_cost import WeldingCostMetric
+import open3d as o3d
 @dataclass
 class MotionGenConfig:
     """Configuration dataclass for creating a motion generation instance."""
@@ -999,6 +999,7 @@ class MotionGenPlanConfig:
 
     #: Finetune dt scale for joint space planning.
     finetune_js_dt_scale: Optional[float] = 1.1
+    weld_cost_metric: Optional[WeldingCostMetric] = None
 
     def __post_init__(self):
         """Post initialization checks."""
@@ -2069,6 +2070,10 @@ class MotionGen(MotionGenConfig):
                 )
                 return result
 
+
+        if plan_config.weld_cost_metric is not None:
+            self.update_weld_cost_metric(plan_config.weld_cost_metric)
+
         for n in range(plan_config.max_attempts):
             result = self._plan_js_from_solve_state(
                 solve_state, start_state, goal_state, plan_config=plan_config
@@ -2214,6 +2219,16 @@ class MotionGen(MotionGenConfig):
             for rollout in rollouts
             if isinstance(rollout, ArmReacher)
         ]
+
+        return True
+    def update_weld_cost_metric(self, weldcostmetric):
+        rollouts = self.get_all_rollout_instances()
+        [
+            rollout.update_weld_cost_metric(weldcostmetric)
+            for rollout in rollouts
+            if isinstance(rollout, ArmReacher)
+        ]
+        torch.cuda.synchronize(device=self.tensor_args.device)
         return True
 
     def get_all_rollout_instances(self) -> List[RolloutBase]:
@@ -2975,6 +2990,11 @@ class MotionGen(MotionGenConfig):
                     status=MotionGenStatus.INVALID_PARTIAL_POSE_COST_METRIC,
                 )
                 return result
+            
+        if plan_config.weld_cost_metric is not None:
+            self.update_weld_cost_metric(plan_config.weld_cost_metric)
+            self.weld_cost_metric = plan_config.weld_cost_metric
+            #print("Weld Cost Metric Updated")
         self.update_batch_size(seeds=solve_state.num_trajopt_seeds, batch=solve_state.batch_size)
         if solve_state.batch_env:
             if solve_state.batch_size > self.world_coll_checker.n_envs:
@@ -3064,6 +3084,10 @@ class MotionGen(MotionGenConfig):
         torch.cuda.synchronize(device=self.tensor_args.device)
         if plan_config.pose_cost_metric is not None:
             self.update_pose_cost_metric(PoseCostMetric.reset_metric())
+            
+        if plan_config.weld_cost_metric is not None:
+            self.update_weld_cost_metric(WeldingCostMetric.reset_metric())
+        
         if plan_config.time_dilation_factor is not None and torch.count_nonzero(result.success) > 0:
             result.retime_trajectory(
                 plan_config.time_dilation_factor,
@@ -3220,6 +3244,56 @@ class MotionGen(MotionGenConfig):
         best_result.total_time = time.time() - start_time
         return best_result
 
+    def fk(self, q):
+        if isinstance(q, np.ndarray):
+            q = torch.tensor(np.array([q]), dtype=torch.float32, device=self.tensor_args.device)
+
+        kin_state =  self.ik_solver.fk(q)
+        eepos = kin_state.ee_position.to('cpu').numpy()[0]
+        eequat = kin_state.ee_quaternion.to('cpu').numpy()[0]
+        
+        eepose = np.concatenate((eepos, eequat), axis=0)
+        
+        return eepose
+    
+    def visualize_trajectory(self, trajectory, only_points=True):
+        vis = o3d.visualization.Visualizer()
+        vis.create_window()
+        pose_list = []
+        print(f'number of trajectories: {trajectory.shape[0]}')
+
+        
+        for i in range(trajectory.shape[0]):
+            subtraj = trajectory[i]
+            pose_list = np.array([self.fk(subtraj[i]) for i in range(len(subtraj))])
+            position = pose_list[:, :3]
+            orientation = pose_list[:, 3:]
+            
+            #print("Position shapes:", position.shape)
+            #print("Orientation shapes:", orientation.shape)
+            if only_points:
+                traj_pcd = o3d.geometry.PointCloud()
+                traj_pcd.points = o3d.utility.Vector3dVector(position)
+                vis.add_geometry(traj_pcd)
+            
+            else:
+                for i in range(position.shape[0]):
+                    # Create a coordinate frame at the pose
+                    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.025, origin=position[i])
+                    
+                    # Convert quaternion to rotation matrix
+                    R = o3d.geometry.get_rotation_matrix_from_quaternion(orientation[i])
+                        
+                    # Apply the orientation to the frame
+                    frame.rotate(R, center=position[i])
+                    
+                    # Append the frame to the list
+                    vis.add_geometry(frame)
+                
+        vis.run()
+        vis.destroy_window()
+        
+
     def _plan_from_solve_state(
         self,
         solve_state: ReacherSolveState,
@@ -3368,7 +3442,28 @@ class MotionGen(MotionGenConfig):
                     return result
                 if plan_config.need_graph_success:
                     return result
-
+        print('trajopt')
+        
+        weldline_vec = plan_config.weld_cost_metric.welding_end_point - plan_config.weld_cost_metric.welding_start_point
+        
+        weldline_vec = weldline_vec / torch.norm(weldline_vec)
+        
+        new_weld_cost_metric = WeldingCostMetric(
+            tool_axis_vec=plan_config.weld_cost_metric.tool_axis_vec,
+            welding_start_point=plan_config.weld_cost_metric.welding_start_point,
+            welding_end_point=plan_config.weld_cost_metric.welding_end_point,
+            welding_start_end_angle=plan_config.weld_cost_metric.welding_start_end_angle,
+            welding_start_end_range=plan_config.weld_cost_metric.welding_start_end_range,
+            welding_start_end_position_weight=plan_config.weld_cost_metric.welding_start_end_position_weight* torch.tensor([1.0,1.0], device=self.tensor_args.device),
+            welding_tool_contact_weight=plan_config.weld_cost_metric.welding_tool_contact_weight,
+            welding_tool_working_angle_weight=plan_config.weld_cost_metric.welding_tool_working_angle_weight,
+            #welding_tool_travel_angle_weight=plan_config.weld_cost_metric.welding_tool_travel_angle_weight,
+            welding_start_end_angle_weight=plan_config.weld_cost_metric.welding_start_end_angle_weight,
+            welding_movement_consistency_weight=plan_config.weld_cost_metric.welding_movement_consistency_weight*0.0)
+        
+        #self.update_weld_cost_metric(new_weld_cost_metric)
+        
+        #print(new_weld_cost_metric)
         # do trajopt::
 
         if plan_config.enable_opt:
@@ -3460,7 +3555,10 @@ class MotionGen(MotionGenConfig):
                 self.trajopt_solver.interpolation_type = og_value
             if self.store_debug_in_result:
                 result.debug_info["trajopt_result"] = traj_result
+            self.update_weld_cost_metric(plan_config.weld_cost_metric)
             # run finetune
+            #traj_result.success = torch.ones_like(traj_result.success, device=self.tensor_args.device)
+
             if plan_config.enable_finetune_trajopt and torch.count_nonzero(traj_result.success) > 0:
                 with profiler.record_function("motion_gen/finetune_trajopt"):
                     seed_traj = traj_result.raw_action.clone()  # solution.position.clone()

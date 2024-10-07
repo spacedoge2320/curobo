@@ -33,6 +33,9 @@ from curobo.util.logger import log_error, log_info, log_warn
 from curobo.util.tensor_util import cat_max
 from curobo.util.torch_utils import get_torch_jit_decorator
 
+# Custom cost
+from curobo.rollout.cost.welding_cost import WeldingCost, WeldingCostMetric
+
 # Local Folder
 from .arm_base import ArmBase, ArmBaseConfig, ArmCostConfig
 
@@ -45,7 +48,7 @@ class ArmReacherMetrics(RolloutMetrics):
     pose_error: Optional[T_BValue_float] = None
     goalset_index: Optional[T_BValue_int] = None
     null_space_error: Optional[T_BValue_float] = None
-
+    welding_start_end_position_error: Optional[T_BValue_float] = None
     def __getitem__(self, idx):
         d_list = [
             self.cost,
@@ -58,6 +61,7 @@ class ArmReacherMetrics(RolloutMetrics):
             self.pose_error,
             self.goalset_index,
             self.null_space_error,
+            self.welding_start_end_position_error,
         ]
         idx_vals = list_idx_if_not_none(d_list, idx)
         return ArmReacherMetrics(*idx_vals)
@@ -78,6 +82,7 @@ class ArmReacherMetrics(RolloutMetrics):
             null_space_error=(
                 None if self.null_space_error is None else self.null_space_error.clone()
             ),
+            welding_start_end_position_error=None if self.welding_start_end_position_error is None else self.welding_start_end_position_error.clone(),
         )
 
 
@@ -90,6 +95,7 @@ class ArmReacherCostConfig(ArmCostConfig):
     zero_vel_cfg: Optional[CostConfig] = None
     zero_jerk_cfg: Optional[CostConfig] = None
     link_pose_cfg: Optional[PoseCostConfig] = None
+    welding_cfg: Optional[CostConfig] = None
 
     @staticmethod
     def _get_base_keys():
@@ -103,6 +109,7 @@ class ArmReacherCostConfig(ArmCostConfig):
             "zero_vel_cfg": CostConfig,
             "zero_jerk_cfg": CostConfig,
             "link_pose_cfg": PoseCostConfig,
+            "welding_cfg": CostConfig,
         }
         new_k.update(base_k)
         return new_k
@@ -209,6 +216,9 @@ class ArmReacher(ArmBase, ArmReacherConfig):
             self._max_vel = self.state_bounds["velocity"][1]
             if self.zero_jerk_cost.hinge_value is not None:
                 self._compute_g_dist = True
+        if self.cost_cfg.welding_cfg is not None:
+            #print(self.cost_cfg.welding_cfg)
+            self.welding_cost = WeldingCost(self.cost_cfg.welding_cfg)
 
         self.z_tensor = torch.tensor(
             0, device=self.tensor_args.device, dtype=self.tensor_args.dtype
@@ -323,6 +333,34 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                 g_dist,
             )
             cost_list.append(z_vel)
+        
+        #print(ee_pos_batch.shape)
+        with profiler.record_function("cost/welding"):
+            if self.cost_cfg.welding_cfg is not None and self.welding_cost.enabled:
+                # get b x h x 3 to b x h x 1 x 3
+                weld_tip_spheres = ee_pos_batch.unsqueeze(dim=2)
+                # get b x h x 1 x 3 to b x h x 1 x 4 by adding one more dimension, which is 0.0025
+                weld_tip_spheres = torch.cat([weld_tip_spheres, torch.zeros_like(weld_tip_spheres[:,:,:,:1])+0.005], dim=-1)
+                
+                weld_tip_cost = self.primitive_collision_cost.forward(
+                    weld_tip_spheres,
+                    env_query_idx=self._goal_buffer.batch_world_idx,
+                )
+                #print(weld_tip_cost[0,-1])
+                #print(torch.sum(weld_tip_cost, dim=-1))
+                weld_cost, mask = self.welding_cost.forward(ee_pos_batch, ee_quat_batch)
+                #print(mask[0,:])
+                weld_tip_cost = weld_tip_cost * mask
+                weld_tip_cost[0:5] = 0
+                
+                #print(weld_tip_cost[0,:])
+                
+                if weld_cost is not None:
+                    cost_list.append(weld_cost)
+                    cost_list.append(weld_tip_cost)
+                    #print("Welding cost is not None")
+                    
+                  
         with profiler.record_function("cat_sum"):
             if self.sum_horizon:
                 cost = cat_sum_horizon_reacher(cost_list)
@@ -402,6 +440,9 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                 state.state_seq.position,
                 self._goal_buffer.batch_retract_state_idx,
             )
+            
+        if self.cost_cfg.welding_cfg is not None and self.welding_cost.enabled:
+            out_metrics.welding_start_end_position_error = self.welding_cost.forward_start_end_position(state.ee_pos_seq, state.ee_quat_seq)
 
         return out_metrics
 
@@ -474,6 +515,16 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                 )
                 for x in pose_costs
             ]
+            
+    def get_weld_cost_metric(self):
+        return self.welding_cost.return_metric()
+            
+    def update_weld_cost_metric(
+        self, metric: WeldingCostMetric):
+        
+        if self.cost_cfg.welding_cfg is not None and self.welding_cost.enabled:
+            #print(metric)
+            self.welding_cost.update_metric(metric)
 
 
 @get_torch_jit_decorator()

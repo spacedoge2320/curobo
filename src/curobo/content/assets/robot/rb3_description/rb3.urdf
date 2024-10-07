@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="rb3">
+  <link
+    name="base_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 0" />
+      <geometry>
+        <mesh
+          filename="meshes/base_link.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 0" />
+      <geometry>
+        <mesh
+          filename="meshes/base_link.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="Link_1">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 1.57" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_1.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 1.57" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_1.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_1"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-3.14" soft_upper_limit="3.14"/>
+    <origin
+      xyz="0 0 0.085"
+      rpy="0 0 3.14" />
+    <parent
+      link="base_link" />
+    <child
+      link="Link_1" />
+    <axis
+      xyz="0 0 1" />
+    <dynamics damping="10.0"/>
+    <limit effort="87" lower="-1.57" upper="1.57" velocity="2.1750"/>
+  </joint>
+  <link
+    name="Link_2">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707 3.1415 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_2.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707 3.1415 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_2.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_2"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-3.14" soft_upper_limit="3.14"/>
+    <origin
+      xyz="0 0.056834 0.060316"
+      rpy="0 0 0" />
+    <parent
+      link="Link_1" />
+    <child
+      link="Link_2" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics damping="10.0"/>
+    <limit effort="87" lower="-3.14" upper="3.14" velocity="2.1750"/>
+  </joint>
+  <link
+    name="Link_3">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707 3.14 3.14" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_3.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707 3.14 3.14" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_3.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_3"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.61799" soft_upper_limit="2.61799"/>
+    <origin
+      xyz="0 0.0 0.286"
+      rpy="0 0 0" />
+    <parent
+      link="Link_2" />
+    <child
+      link="Link_3" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics damping="10.0"/>
+    <limit effort="87" lower="-2.61799" upper="2.61799" velocity="2.1750"/>
+  </joint>
+  <link
+    name="Link_4">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_4.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_4.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_4"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-6.28" soft_upper_limit="6.28"/>
+    <origin
+      xyz="0 -0.05 0.0607"
+      rpy="0 0 3.14" />
+    <parent
+      link="Link_3" />
+    <child
+      link="Link_4" />
+    <axis
+      xyz="0 0 1" />
+    <dynamics damping="10.0"/>
+    <limit effort="87" lower="-6.28" upper="6.28" velocity="2.1750"/>
+  </joint>
+  <link
+    name="Link_5">
+    <visual>
+      <origin
+        xyz="0 0 0.040465"
+        rpy="1.57 1.57 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_5.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0.040465"
+        rpy="1.57 1.57 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_5.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_5"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-3.14" soft_upper_limit="3.14"/>
+    <origin
+      xyz="0 0 0.2833"
+      rpy="0 0 0" />
+    <parent
+      link="Link_4" />
+    <child
+      link="Link_5" />
+    <axis
+      xyz="0 1 0" />
+    <dynamics damping="10.0"/>
+    <limit effort="12" lower="-6.28" upper="6.28" velocity="2.1750"/>
+  </joint>
+  <link
+    name="Link_6">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="3.14 0 0" />
+      <geometry>
+        <mesh
+          filename="meshes/Link_6.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+  </link>
+  <link
+    name="Link_6_col">
+    <collision>
+      <origin xyz="0.08 0 0" rpy="0 1.57 0"/>
+      <geometry>
+      <cylinder length="0.155" radius="0.035"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.08 0.018 0" rpy="0 0 0"/>
+      <geometry>
+      <box size="0.056 0.036 0.072" />
+      </geometry>
+    </collision>
+        <collision>
+      <origin xyz="0.08 0 -0.018" rpy="0 0 0"/>
+      <geometry>
+      <box size="0.056 0.072 0.036" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.08 0.05 0.02" rpy="0 0 0"/>
+      <geometry>
+      <box size="0.016 0.02 0.016" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.15 0 0.008" rpy="0 0 0"/>
+      <geometry>
+      <box size="0.14 0.016 0.016" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.217 0 0.02927" rpy="0 2.094 0"/>
+      <geometry>
+      <cylinder length="0.057" radius="0.025"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.252 0 0.008" rpy="0 2.094 0"/>
+      <geometry>
+      <cylinder length="0.02" radius="0.008"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.1228 0 0.0831" rpy="0 -1.0472 0"/>
+      <geometry>
+      <cylinder length="0.16" radius="0.013"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.2937 0 -0.0159" rpy="0 -1.0472 0"/>
+      <geometry>
+      <cylinder length="0.1" radius="0.011"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Joint_6"
+    type="revolute">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-3.14" soft_upper_limit="3.14"/>
+    <origin
+      xyz="0 0 0.04"
+      rpy="0 0 1.57" />
+    <parent
+      link="Link_5" />
+    <child
+      link="Link_6" />
+    <axis
+      xyz="0 0 1" />
+    <dynamics damping="10.0"/>
+     <limit effort="12" lower="-6.28" upper="6.28" velocity="2.1750"/>
+  </joint>
+    <link
+    name="Link_EE">
+  </link>
+  <joint
+    name="Joint_EE"
+    type="fixed">
+    <origin
+      xyz="0 0.053 0.358"
+      rpy="0 -2.11 -1.57" />
+    <parent
+      link="Link_6" />
+    <child
+      link="Link_EE" />
+  </joint>
+    <joint
+    name="Joint_6col"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="1.57 -1.57 0" />
+    <parent
+      link="Link_6" />
+    <child
+      link="Link_6_col" />
+  </joint>
+</robot>
+

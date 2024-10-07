@@ -1,0 +1,134 @@
+##
+## Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+##
+## NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+## property and proprietary rights in and to this material, related
+## documentation and any modifications thereto. Any use, reproduction,
+## disclosure or distribution of this material and related documentation
+## without an express license agreement from NVIDIA CORPORATION or
+## its affiliates is strictly prohibited.
+##
+collision_spheres:
+    base_link:
+        - "center": [0.0, 0.0, 0.02]
+          "radius": 0.07
+    Link_1:
+        - "center": [0.0, 0.0, 0.0]
+          "radius": 0.06
+        - "center": [0.0, 0.0, 0.05]
+          "radius": 0.06
+        - "center": [0.0, 0.0, 0.08]
+          "radius": 0.06
+    Link_2:
+        - "center": [0.0, 0.06, 0.0]
+          "radius": 0.065
+        - "center": [0.0, 0.06, 0.05]
+          "radius": 0.05
+        - "center": [0.0, 0.06, 0.1]
+          "radius": 0.05
+        - "center": [0.0, 0.06, 0.15]
+          "radius": 0.05
+        - "center": [0.0, 0.06, 0.2]
+          "radius": 0.05
+        - "center": [0.0, 0.06, 0.25]
+          "radius": 0.05
+        - "center": [0.0, 0.065, 0.285]
+          "radius": 0.05
+    Link_3:
+        - "center": [0.0, -0.045, 0.0075]
+          "radius": 0.06
+    Link_4:
+        - "center": [0.0, 0.0, 0.02]
+          "radius": 0.05
+        - "center": [0.0,-0.012, 0.06]
+          "radius": 0.045
+        - "center": [0.0, -0.05, 0.09]
+          "radius": 0.045
+        - "center": [0.0, -0.08, 0.12]
+          "radius": 0.045
+        - "center": [0.0, -0.09, 0.15]
+          "radius": 0.04
+        - "center": [0.0, -0.09, 0.18]
+          "radius": 0.04
+        - "center": [0.0, -0.09, 0.2]
+          "radius": 0.04
+        - "center": [0.0, -0.09, 0.24]
+          "radius": 0.04
+        - "center": [0.0, -0.095, 0.28]
+          "radius": 0.045
+    Link_5:
+        - "center": [0.0, -0.0025, 0.015]
+          "radius": 0.04
+        - "center": [0.0, -0.0025, -0.015]
+          "radius": 0.04
+    Link_6:
+        - "center": [0.0, 0.016, 0.294]
+          "radius": 0.012
+        - "center": [0.0, 0.021, 0.302]
+          "radius": 0.012
+        - "center": [0.0, 0.026, 0.311]
+          "radius": 0.011
+        - "center": [0.0, 0.031, 0.319]
+          "radius": 0.011
+        - "center": [0.0, 0.036, 0.328]
+          "radius": 0.011
+        - "center": [0.0, 0.041, 0.337]
+          "radius": 0.005
+        - "center": [0.0, 0.011, 0.285]
+          "radius": 0.012
+        - "center": [0.0, 0.006, 0.276]
+          "radius": 0.012
+        - "center": [0.0, 0.001, 0.268]
+          "radius": 0.012
+        - "center": [0.0, -0.004, 0.259]
+          "radius": 0.012
+        - "center": [0.0, -0.009, 0.25]
+          "radius": 0.012
+        - "center": [0.0, -0.014, 0.242]
+          "radius": 0.012
+        - "center": [0.0, -0.019, 0.233]
+          "radius": 0.02
+        - "center": [0.0, -0.029, 0.216]
+          "radius": 0.035
+        - "center": [0.0, -0.044, 0.19]
+          "radius": 0.02
+        - "center": [0.0, -0.049, 0.181]
+          "radius": 0.02
+        - "center": [0.0, -0.054, 0.172]
+          "radius": 0.018
+        - "center": [0.0, -0.064, 0.155]
+          "radius": 0.018
+        - "center": [0.0, -0.074, 0.138]
+          "radius": 0.016
+        - "center": [0.0, -0.084, 0.12]
+          "radius": 0.016
+        - "center": [0.0, -0.094, 0.103]
+          "radius": 0.016
+        - "center": [0.0, -0.104, 0.086]
+          "radius": 0.016
+        - "center": [0.0, -0.114, 0.069]
+          "radius": 0.016
+        - "center": [0.0, -0.006, 0.16]
+          "radius": 0.02
+        - "center": [0.0, -0.006, 0.171]
+          "radius": 0.02
+        - "center": [0.0, -0.006, 0.181]
+          "radius": 0.02
+        - "center": [0.0, 0.0, 0.134]
+          "radius": 0.035
+        - "center": [0.0, 0.0, 0.111]
+          "radius": 0.038
+        - "center": [0.0, 0.0, 0.096]
+          "radius": 0.037
+        - "center": [0.0, 0.0, 0.075]
+          "radius": 0.045
+        - "center": [0.0, 0.0, 0.054]
+          "radius": 0.037
+        - "center": [0.0, 0.0, 0.036]
+          "radius": 0.037
+        - "center": [0.0, 0.0, 0.014]
+          "radius": 0.037
+        - "center": [-0.026, 0.0, 0.08]
+          "radius": 0.02
+        - "center": [-0.026, 0.019, 0.08]
+          "radius": 0.01
