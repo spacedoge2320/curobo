@@ -572,4 +572,4 @@ class WeldingCost(CostBase):
         # Final sum of costs
         cost = torch.sum(torch.stack([working_angle_cost, working_angle_bound_cost, travel_angle_cost, start_travel_angle_cost, end_travel_angle_cost, weldline_distance_cost, constant_movement_cost, acc_squared_cost, start_position_cost, start_pause_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
         
-        return cost + waypoint_cost, weldtip_cost_matrix
+        return cost, weldtip_cost_matrix

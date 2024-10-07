@@ -70,7 +70,7 @@ cost:
     null_space_weight: [0.0]
 
   primitive_collision_cfg:
-    weight: 100000
+    weight: 300000
     use_sweep: True
     sweep_steps: 4
     classify: False
@@ -91,7 +91,7 @@ lbfgs:
   cold_start_n_iters: null
   min_iters: 25
   line_search_scale: [0.025, 0.0625, 0.125, 0.25]
-  fixed_iters: False
+  fixed_iters: True
   cost_convergence: 0.001
   cost_delta_threshold: 0.0001
   cost_relative_threshold: 0.99

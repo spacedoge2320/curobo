@@ -411,8 +411,8 @@ class ArmBase(RolloutBase, ArmBaseConfig):
             constraint_list.append(self_constraint)
         constraint = cat_sum(constraint_list)
 
-        for cost in constraint_list:
-            print(f'cost_fail_rate: {round((torch.sum(torch.nonzero(cost, as_tuple=True)[0])/cost.shape[0]).item(),3)}, total: {cost.shape[0]}')
+        #for cost in constraint_list:
+        #    print(f'cost_fail_rate: {round((torch.sum(torch.nonzero(cost, as_tuple=True)[0])/cost.shape[0]).item(),3)}, total: {cost.shape[0]}')
                 
 
         feasible = constraint == 0.0
