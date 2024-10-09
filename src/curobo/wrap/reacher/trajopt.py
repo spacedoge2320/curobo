@@ -919,7 +919,7 @@ class TrajOptSolver(TrajOptSolverConfig):
         result, seq_list = self.solver.solve_seq(goal_buffer, seed_traj)
         print("optim_results")
         if 0:# and seq_list[0].shape[0] != 1:
-            self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
+            #self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
             for i in range(len(seq_list)):
                 self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)
         log_info("Ran TO")
@@ -2111,11 +2111,13 @@ def jit_trajopt_best_select(
     running_cost = torch.mean(cost, dim=-1) * 0.0001
     error = convergence_error + smooth_cost + running_cost
     if welding_start_end_position_error is not None and welding_start_end_position_error.shape[0] > 1:
-        welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=-1)
-        success[welding_start_end_position_error >100] = False
-        print(welding_start_end_position_error)
-    else:
-        print('no welding error')
+        welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=1)
+        print("Welding start/end position error:")
+        print(welding_start_end_position_error.detach().cpu().numpy())
+        success[welding_start_end_position_error >20] = False
+        
+    #else:
+        #print('no welding error')
     
     
     error[~success] += 10000000000.0
@@ -2139,7 +2141,7 @@ def jit_trajopt_best_select(
         # Replace NaN values with a large number to ensure they're not selected
         error_no_nan = torch.where(torch.isnan(error), torch.tensor(float(10000000000.0), device=error.device), error)
         idx = torch.argmin(error_no_nan, dim=0)
-        print(error[idx])
+        #print(error[idx])
 
         # Check if the selected index corresponds to a NaN value
         if torch.isnan(error[idx]):

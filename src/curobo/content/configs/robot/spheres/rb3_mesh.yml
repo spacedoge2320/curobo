@@ -67,9 +67,9 @@ collision_spheres:
         - "center": [0.0, 0.021, 0.302]
           "radius": 0.012
         - "center": [0.0, 0.026, 0.311]
-          "radius": 0.011
+          "radius": 0.012
         - "center": [0.0, 0.031, 0.319]
-          "radius": 0.011
+          "radius": 0.012
         - "center": [0.0, 0.036, 0.328]
           "radius": 0.011
         - "center": [0.0, 0.041, 0.337]
@@ -81,10 +81,6 @@ collision_spheres:
         - "center": [0.0, 0.001, 0.268]
           "radius": 0.012
         - "center": [0.0, -0.004, 0.259]
-          "radius": 0.012
-        - "center": [0.0, -0.009, 0.25]
-          "radius": 0.012
-        - "center": [0.0, -0.014, 0.242]
           "radius": 0.012
         - "center": [0.0, -0.019, 0.233]
           "radius": 0.02
@@ -108,27 +104,27 @@ collision_spheres:
           "radius": 0.016
         - "center": [0.0, -0.114, 0.069]
           "radius": 0.016
-        - "center": [0.0, -0.006, 0.16]
-          "radius": 0.02
         - "center": [0.0, -0.006, 0.171]
           "radius": 0.02
-        - "center": [0.0, -0.006, 0.181]
+        - "center": [-0.0, -0.005, 0.207]
           "radius": 0.02
         - "center": [0.0, 0.0, 0.134]
           "radius": 0.035
         - "center": [0.0, 0.0, 0.111]
-          "radius": 0.038
+          "radius": 0.042
         - "center": [0.0, 0.0, 0.096]
           "radius": 0.037
         - "center": [0.0, 0.0, 0.075]
           "radius": 0.045
-        - "center": [0.0, 0.0, 0.054]
-          "radius": 0.037
         - "center": [0.0, 0.0, 0.036]
           "radius": 0.037
         - "center": [0.0, 0.0, 0.014]
           "radius": 0.037
         - "center": [-0.026, 0.0, 0.08]
           "radius": 0.02
-        - "center": [-0.026, 0.019, 0.08]
-          "radius": 0.01
+        - "center": [-0.044, -0.015, 0.077]
+          "radius": 0.02
+        - "center": [-0.046, -0.015, 0.055]
+          "radius": 0.02
+        - "center": [-0.02, 0.023, 0.061]
+          "radius": 0.02

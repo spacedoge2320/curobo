@@ -74,8 +74,9 @@ def travel_angle_error_fn(x_vectors:torch.Tensor, start_point: torch.Tensor, end
 
     decrease_penalty = -torch.relu(-torch.matmul(vector_diff, weldline_vec))
 
-    return start_angle_diff, end_angle_diff, decrease_penalty
+    zero_deg_preference = torch.relu(torch.abs(angles) - 0.001)
 
+    return start_angle_diff, end_angle_diff, decrease_penalty
 
 @get_torch_jit_decorator()
 def waypoint_angle_error_fn(x_vectors: torch.Tensor,start_point: torch.Tensor, end_point:torch.Tensor, angle: torch.Tensor, waypoint_matrix: torch.Tensor):
@@ -391,48 +392,21 @@ class WeldingCost(CostBase):
         # This should be applied to the actual welding portion
         start_threshold = self.welding_start_end_range[0] * (h - 1) 
         end_threshold = self.welding_start_end_range[1] * (h - 1) 
-        waypoint_threshold = self.waypoint_ratio * (h - 1) 
-        
+
         cost_mask = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold).float()
-        cost_mask_except_last = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold - 1).float()
         
         start_matrix = (horizon_range >= start_threshold).float() * (horizon_range < start_threshold + 1).float()
         end_matrix = (horizon_range <= end_threshold).float() * (horizon_range > end_threshold - 1).float()
-        waypoint_matrix = (horizon_range <= waypoint_threshold).float() * (horizon_range > waypoint_threshold - 1).float()
-        
-        # Calculate where to apply weldtip collision cost to
-        # This should be applied to approach or the return trajectory
-        weldtip_cost_matrix = (horizon_range <= start_threshold -2).float() + (horizon_range >= end_threshold + 2).float()
-        
-        # Calculate costs that are applied to each point
-        # Flatten the ee_quat_batch and ee_pos_batch for costs that are applied to each point
-        #nan_count = torch.isnan(ee_quat_batch).sum().item()
-        #self.counter += 1
-        #print(self.counter)
-        #print(ee_quat_batch.shape)
-        #print(f"Number of NaN values in ee_quat_batch: {nan_count/4/44}")
+
         tool_x_vectors = calculate_tool_vectors(ee_quat_batch, self.x_vectors, self.one_tensor)
 
-        working_angle_consistency_error, working_angle_bound_error = working_angle_consistency_error_fn(tool_x_vectors, self.welding_start_point, self.welding_end_point, self.tool_axis_vec, cost_mask)
-
-        working_angle_error = working_angle_error_fn(tool_x_vectors, self.welding_start_point, self.welding_end_point, self.tool_axis_vec)
-        
-        start_angle_error, end_angle_error, travel_angle_error = travel_angle_error_fn(tool_x_vectors, self.welding_start_point, self.welding_end_point, self.welding_start_end_angle, start_matrix, end_matrix)
-        
         weldline_distance_error, acc_squared_error = weldline_distance_error_fn(ee_pos_batch, self.welding_start_point, self.welding_end_point)
 
         constant_movement_error, start_point, end_point = constant_movement_error_fn(ee_pos_batch, start_matrix, end_matrix)
 
         start_point_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.welding_start_point.repeat(b,h,1), start_matrix)
 
-        start_point_pause_error1 = waypoint_distance_error_fn(ee_pos_batch, start_point.repeat(1,h,1), torch.roll(start_matrix, 1, dims=1))
-        start_point_pause_error2 = waypoint_distance_error_fn(ee_pos_batch, start_point.repeat(1,h,1), torch.roll(start_matrix, -1, dims=1))
-
         end_point_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.welding_end_point.repeat(b,h,1), end_matrix)
-
-        waypoint_distance_error = waypoint_distance_error_fn(ee_pos_batch, self.waypoint_position.repeat(b,h,1), waypoint_matrix)
-
-        #Soft variables
 
         start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]
         
@@ -442,7 +416,7 @@ class WeldingCost(CostBase):
         
 
         # Final sum of costs
-        cost = torch.sum(torch.stack([start_position_cost, end_position_cost], dim=0), dim=[0]) * cost_mask
+        cost = torch.sum(torch.stack([weldline_distance_error*1000], dim=0), dim=[0]) * cost_mask
         
         return cost
         
@@ -461,6 +435,8 @@ class WeldingCost(CostBase):
         start_threshold = self.welding_start_end_range[0] * (h - 1) 
         end_threshold = self.welding_start_end_range[1] * (h - 1) 
         waypoint_threshold = self.waypoint_ratio * (h - 1) 
+
+        weldline_length = torch.norm(self.welding_start_point - self.welding_end_point)
         
         cost_mask = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold).float()
         cost_mask_except_last = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold - 1).float()
@@ -524,11 +500,11 @@ class WeldingCost(CostBase):
 
         #Soft variables
 
-        start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]
+        start_position_cost = (self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0] / weldline_length)*0.4
         
         start_pause_cost = self.logcosh((start_point_pause_error1 + start_point_pause_error2), 0.01)* self.welding_start_end_position_weight[0]
         
-        end_position_cost = self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1]
+        end_position_cost = (self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1] / weldline_length)*0.4
 
         waypoint_cost = self.logcosh(waypoint_distance_error, 0.01)*self.waypoint_weight
 
