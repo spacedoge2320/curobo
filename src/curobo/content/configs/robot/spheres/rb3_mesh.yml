@@ -63,13 +63,13 @@ collision_spheres:
           "radius": 0.04
     Link_6:
         - "center": [0.0, 0.016, 0.294]
-          "radius": 0.012
+          "radius": 0.011
         - "center": [0.0, 0.021, 0.302]
-          "radius": 0.012
+          "radius": 0.011
         - "center": [0.0, 0.026, 0.311]
-          "radius": 0.012
+          "radius": 0.011
         - "center": [0.0, 0.031, 0.319]
-          "radius": 0.012
+          "radius": 0.011
         - "center": [0.0, 0.036, 0.328]
           "radius": 0.011
         - "center": [0.0, 0.041, 0.337]

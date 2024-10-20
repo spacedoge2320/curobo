@@ -75,9 +75,6 @@ cost:
     weight: 500.0
     classify: False
    
-  welding_cfg:
-    weight: 500
-
 
 
 

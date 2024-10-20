@@ -60,7 +60,7 @@ cost:
     run_weight: 0.0
 
   bound_cfg:
-    weight: [100000.0, 100000.0, 1000.0,1000.0]
+    weight: [1000000.0, 100000.0, 1000.0,1000.0]
     smooth_weight: [0.0,20000.0,5.0, 0.0]
     run_weight_velocity: 1.00
     run_weight_acceleration: 1.0
@@ -69,7 +69,7 @@ cost:
     null_space_weight: [0.0]
 
   primitive_collision_cfg:
-    weight: 200000
+    weight: 300000
     use_sweep: False
     sweep_steps: 4
     classify: False
@@ -80,7 +80,7 @@ cost:
 
 
   self_collision_cfg:
-    weight: 50000
+    weight: 10000000
     classify: False
 
 
@@ -90,12 +90,12 @@ lbfgs:
   inner_iters: 25
   cold_start_n_iters: null
   min_iters: 25
-  line_search_scale: [0.025, 0.0625, 0.125, 0.25]
+  line_search_scale: [0.025, 0.05, 0.1, 0.25]
   fixed_iters: True
   cost_convergence: 0.001
   cost_delta_threshold: 0.0001
   cost_relative_threshold: 0.99
-  epsilon: 0.005
+  epsilon: 0.01
   history: 27
   use_cuda_graph: True
   n_problems: 1
@@ -107,7 +107,7 @@ lbfgs:
   use_cuda_update_best_kernel: True
   use_temporal_smooth: False
   sync_cuda_time: True
-  step_scale: 0.25
+  step_scale: 1.0
   last_best: 10
   use_coo_sparse: True
   debug_info:

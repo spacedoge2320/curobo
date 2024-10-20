@@ -63,14 +63,14 @@ cost:
     weight: [0.1, 0.1,0.0,0.0]
     activation_distance: [0.0,0.0,0.0,0.0] #-#0.01
     #smooth_weight: [0.0,100.0,1.0,0.0]
-    smooth_weight: [0.0,200.0,0.0,0.0]
+    smooth_weight: [0.0,2000.0,0.0,0.0]
     run_weight_velocity: 0.0
     run_weight_acceleration: 1.0
     run_weight_jerk: 1.0
     null_space_weight: [0.00]
 
   primitive_collision_cfg:
-    weight: 500000
+    weight: 2000
     use_sweep: False
     classify: False
     sweep_steps: 4
@@ -80,7 +80,7 @@ cost:
     activation_distance: 0.025
 
   self_collision_cfg:
-    weight: 50000
+    weight: 2000
     classify: False
 
 
@@ -114,7 +114,7 @@ mppi:
   sample_params:
     fixed_samples: False
     sample_ratio: {'halton':0.0, 'halton-knot':0.0, 'random':0.0, 'random-knot':0.0, "stomp": 1.0}
-    seed: 25
+    seed: 100
     filter_coeffs: [0.3, 0.3, 0.4]
     n_knots: 5
   debug_info:

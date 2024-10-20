@@ -304,6 +304,21 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                 state_batch.position,
                 self._goal_buffer.batch_goal_state_idx,
             )
+
+
+            weld_tip_spheres = ee_pos_batch.unsqueeze(dim=2)
+            # get b x h x 1 x 3 to b x h x 1 x 4 by adding one more dimension, which is 0.0025
+            #weld_tip_spheres = torch.cat([weld_tip_spheres, torch.zeros_like(weld_tip_spheres[:,:,:,:1])+0.005], dim=-1)
+            
+            """weld_tip_cost = self.primitive_collision_cost.forward(
+                weld_tip_spheres,
+                env_query_idx=self._goal_buffer.batch_world_idx,
+            )
+            #mask = torch.ones_like(weld_tip_cost)
+            #mask[:,0:5] = 0
+            #weld_tip_cost = weld_tip_cost * mask
+
+            cost_list.append(weld_tip_cost)"""
             cost_list.append(joint_cost)
         if self.cost_cfg.straight_line_cfg is not None and self.straight_line_cost.enabled:
             st_cost = self.straight_line_cost.forward(ee_pos_batch)
@@ -350,8 +365,8 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                 #print(torch.sum(weld_tip_cost, dim=-1))
                 weld_cost, mask = self.welding_cost.forward(ee_pos_batch, ee_quat_batch)
                 #print(mask[0,:])
+                mask[:,0:5] = 0
                 weld_tip_cost = weld_tip_cost * mask
-                weld_tip_cost[0:5] = 0
                 
                 #print(weld_tip_cost[0,:])
                 
@@ -359,7 +374,6 @@ class ArmReacher(ArmBase, ArmReacherConfig):
                     cost_list.append(weld_cost)
                     cost_list.append(weld_tip_cost)
                     #print("Welding cost is not None")
-                    
                   
         with profiler.record_function("cat_sum"):
             if self.sum_horizon:

@@ -46,6 +46,13 @@ cost:
     terminal: True
     run_weight: 1.0
     use_metric: True
+    
+  welding_cfg:
+    vec_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    weight: [250.0, 5000.0, 20, 20]
+    threshold_value: 0.01
+    terminal: False
+    dof: 6
 
 
   cspace_cfg:

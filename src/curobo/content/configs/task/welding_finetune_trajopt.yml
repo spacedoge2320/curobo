@@ -62,7 +62,7 @@ cost:
 
   bound_cfg:
     weight: [50000.0, 50000.0, 500.0,500.0]
-    smooth_weight: [0.0,100.0, 5.0, 0.0]
+    smooth_weight: [0.0,20000.0, 5.0, 0.0]
     run_weight_velocity: 0.0
     run_weight_acceleration: 0.5
     run_weight_jerk: 0.5
@@ -70,7 +70,7 @@ cost:
     null_space_weight: [0.0]
 
   primitive_collision_cfg:
-    weight: 300000
+    weight: 500000
     use_sweep: True
     sweep_steps: 4
     classify: False
@@ -80,7 +80,7 @@ cost:
     activation_distance: 0.025
 
   self_collision_cfg:
-    weight: 20000
+    weight: 5000000
     classify: False
 
 
@@ -90,7 +90,7 @@ lbfgs:
   inner_iters: 50
   cold_start_n_iters: null
   min_iters: 25
-  line_search_scale: [0.025, 0.0625, 0.125, 0.25]
+  line_search_scale: [0.025, 0.05, 0.1, 0.25]
   fixed_iters: True
   cost_convergence: 0.001
   cost_delta_threshold: 0.0001

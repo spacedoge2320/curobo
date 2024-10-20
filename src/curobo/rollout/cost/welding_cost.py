@@ -74,8 +74,6 @@ def travel_angle_error_fn(x_vectors:torch.Tensor, start_point: torch.Tensor, end
 
     decrease_penalty = -torch.relu(-torch.matmul(vector_diff, weldline_vec))
 
-    zero_deg_preference = torch.relu(torch.abs(angles) - 0.001)
-
     return start_angle_diff, end_angle_diff, decrease_penalty
 
 @get_torch_jit_decorator()
@@ -435,8 +433,6 @@ class WeldingCost(CostBase):
         start_threshold = self.welding_start_end_range[0] * (h - 1) 
         end_threshold = self.welding_start_end_range[1] * (h - 1) 
         waypoint_threshold = self.waypoint_ratio * (h - 1) 
-
-        weldline_length = torch.norm(self.welding_start_point - self.welding_end_point)
         
         cost_mask = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold).float()
         cost_mask_except_last = (horizon_range >= start_threshold).float() * (horizon_range <= end_threshold - 1).float()
@@ -500,11 +496,11 @@ class WeldingCost(CostBase):
 
         #Soft variables
 
-        start_position_cost = (self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0] / weldline_length)*0.4
+        start_position_cost = self.logcosh(start_point_distance_error, 0.01)*self.welding_start_end_position_weight[0]
         
         start_pause_cost = self.logcosh((start_point_pause_error1 + start_point_pause_error2), 0.01)* self.welding_start_end_position_weight[0]
         
-        end_position_cost = (self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1] / weldline_length)*0.4
+        end_position_cost = self.logcosh(end_point_distance_error, 0.01)* self.welding_start_end_position_weight[1]
 
         waypoint_cost = self.logcosh(waypoint_distance_error, 0.01)*self.waypoint_weight
 

@@ -159,7 +159,7 @@ class NewtonOptBase(Optimizer, NewtonOptConfig):
         with profiler.record_function("newton/reset"):
             self.i = -1
             self._opt_finished = False
-            self.best_cost[:] = 5000000.0
+            self.best_cost[:] = 10000000000.0
             self.best_iteration[:] = 0
             self.current_iteration[:] = 0
 

@@ -917,11 +917,11 @@ class TrajOptSolver(TrajOptSolverConfig):
             goal_buffer.goal_state = None
         self.solver.reset()
         result, seq_list = self.solver.solve_seq(goal_buffer, seed_traj)
-        print("optim_results")
-        if 0:# and seq_list[0].shape[0] != 1:
-            #self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
-            for i in range(len(seq_list)):
-                self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)
+        #print("optim_results")
+        if 0 and seq_list[0].shape[0] != 1:
+            self.visualize_trajectory(seq_list[-1].detach().cpu().numpy(), False)
+            #for i in range(len(seq_list)):
+                #self.visualize_trajectory(seq_list[i].detach().cpu().numpy(), False)
         log_info("Ran TO")
         traj_result = self._get_result(
             result,
@@ -1302,7 +1302,7 @@ class TrajOptSolver(TrajOptSolverConfig):
         vis = o3d.visualization.Visualizer()
         vis.create_window()
         pose_list = []
-        print(f'number of trajectories: {trajectory.shape[0]}')
+        #print(f'number of trajectories: {trajectory.shape[0]}')
         
         def fk(q):
             if isinstance(q, np.ndarray):
@@ -2111,10 +2111,9 @@ def jit_trajopt_best_select(
     running_cost = torch.mean(cost, dim=-1) * 0.0001
     error = convergence_error + smooth_cost + running_cost
     if welding_start_end_position_error is not None and welding_start_end_position_error.shape[0] > 1:
-        welding_start_end_position_error = torch.mean(welding_start_end_position_error, dim=1)
-        print("Welding start/end position error:")
-        print(welding_start_end_position_error.detach().cpu().numpy())
-        success[welding_start_end_position_error >20] = False
+        welding_start_end_position_error, _ = torch.max(welding_start_end_position_error, dim=-1, keepdim=True)
+        print(welding_start_end_position_error.squeeze())
+        success[welding_start_end_position_error.squeeze() > 5] = False
         
     #else:
         #print('no welding error')
